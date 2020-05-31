@@ -1,14 +1,13 @@
 clear; clc;
+addpath(genpath('mmread'));
 % I = imread('lena512.bmp');
 % 
 % I_noisy = imnoise(I,'salt & pepper',0.7);
 % 
-% filtI = Med_Filter(I_noisy,11);
+% [filtI,indices] = Med_Filter(I_noisy,11);
 % imshow(filtI);
 % figure;
 % imshow(I_noisy);
-% 
-% indices = (filtI == I_noisy)
 % 
 % psnr(I_noisy,I)
 % psnr(filtI,I)
@@ -20,4 +19,5 @@ vidframes_gray = zeros(H,W,1,F);
 for i = 1:F
     vidframes_gray(:,:,1,i) = rgb2gray(vidframes(:,:,:,i));
 end
-% PatchFinding(vidframes_gray);
+vidframes_gray = vidframes_gray/256;
+PatchFinding(vidframes_gray(:,:,:,1:20));
