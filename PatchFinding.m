@@ -11,6 +11,7 @@ for i=1:K
             for ch=1:C
                 RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, ch, i);
                 [Pjk, Pos]= Match(Images, RefP, ch, Fsel);
+                Omega= selectReliable(Pjk);
             end
             
         end
@@ -62,6 +63,31 @@ for i=1: Fsel
     curr= reshape(currPatch, N*N, 1);
     P(:,i)= curr;
 end
+end
+
+function Omega= selectReliable(Pjk)
+N= size(Pjk, 1);
+M= size(Pjk, 2);
+sigma=0;
+Pjk= double(Pjk);
+S= sum(Pjk, 2);
+S= S/M;
+D= Pjk-S;
+D= D.*D;
+Ds=sum(D,2);
+Ds= Ds/(M-1);
+sigma= sum(Ds, 'all');
+sigma= sqrt(sigma);
+sigma = 2*sigma;
+Omega= zeros(N,M);
+for i=1: N
+    for j=1: M
+        if (abs(Pjk(i,j)-S(i))<= sigma)
+            Omega(i,j)=1;
+        end
+    end
+end
+
 end
 
 
