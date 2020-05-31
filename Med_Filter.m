@@ -1,6 +1,7 @@
-function filt_image = Med_Filter(image,max_winsize)
+function [filt_image,indices] = Med_Filter(image,max_winsize)
 %     if filter == "ramf"
         filt_image = RAMF(image,max_winsize);
+        indices = (filt_image == image);
 %     elseif filter == "samf"
 %         filt_image = SAMF(image,max_winsize);
 %     else
