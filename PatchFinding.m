@@ -8,29 +8,42 @@ function Ans = PatchFinding(Images,Fsel,patchSize,refInt,type)
         for ypos=1:G:H-N+1
             for xpos=1:G:W-N+1
                 for ch=1:C
+                    i
+                    ypos
+                    xpos
+                    ch
                     RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, ch, i);
-                    [Pjk, Pos]= Match(Images, RefP, ch, Fsel,type);
+                    RefPos= [i, ypos, xpos];
+                    [Pjk, Pos]= Match(Images, RefP, ch, Fsel, RefPos,type);
                     Omega= selectReliable(Pjk);
+                    Q= Denoise(Pjk, Omega);
+                    for k=1: size(Q, 2)
+                        patch= reshape(Q(:,k), N,N);
+                        Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))= Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))+ patch;
+                        Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))= Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))+1;
+                    end
                 end
             end
         end
     end
+    Count= max(Count,1);
+    Ans= Ans./Count;
 end
 
-function [Pjk, Pos] = Match(Images, RefP, ch, Fsel,type)
+function [Pjk, Pos] = Match(Images, RefP, ch, Fsel,RefPos,type)
     [~,~,~,K] = size(Images);
     N= size(RefP, 1);
     Pjk= zeros(N*N, Fsel*K);    %Pjk is the matrix of matched patches in the chanel ch
     Pos= zeros(Fsel*K, 3,'uint8');      %Pos are the positions (Frame no, x, y) of those matched patches
     for i= 1:K
-        [P, Posf]= Select(Images(:,:, ch, i), RefP, Fsel,type);
+        [P, Posf]= Select(Images(:,:, ch, i), RefP, Fsel,RefPos,type);
         Pjk(:, (i-1)*Fsel+1: i*Fsel)= P;
         Pos((i-1)*Fsel+1: i*Fsel, 2:3)= Posf;
         Pos((i-1)*Fsel+1: i*Fsel, 1)= i;
     end
 end
 
-function [P, Posf] = Select(Image, RefP, Fsel,type)
+function [P, Posf] = Select(Image, RefP, Fsel,RefPos,type)
     [H,W]=size(Image);
     N= size(RefP, 1);
     P= zeros(N*N, Fsel);
@@ -39,6 +52,9 @@ function [P, Posf] = Select(Image, RefP, Fsel,type)
     if strcmp(type,'exhaustive')
         for i=1: H-N+1
             for j=1:W-N+1
+                if abs(RefPos(2)-i)>10 || abs(RefPos(3)-j)>10
+                    continue;
+                end
                 currPatch= Image(i: i+N-1, j: j+N-1);
                 MAD= abs(RefP-currPatch);
                 currVal= [sum(MAD, 'all') i j];
@@ -59,6 +75,9 @@ function [P, Posf] = Select(Image, RefP, Fsel,type)
         Ar_temp = inf(Fsel*4,3);
         for i = 1:H-N+1
             for j = 1:W-N+1
+                if abs(RefPos(2)-i)>10 || abs(RefPos(3)-j)>10
+                    continue;
+                end
                 currPatch= Image(i: i+N-1, j: j+N-1);
                 Patch_label = Image_labels(i,j);
                 Pattern = (RefP_labels == Patch_label);
