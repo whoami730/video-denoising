@@ -20,4 +20,10 @@ for i = 1:F
     vidframes_gray(:,:,1,i) = rgb2gray(vidframes(:,:,:,i));
 end
 vidframes_gray = vidframes_gray/256;
-PatchFinding(vidframes_gray(:,:,:,1:20));
+tic;
+PatchFinding(vidframes_gray(:,:,:,1:2),5,8,4,'fast');
+toc;
+
+tic;
+PatchFinding(vidframes_gray(:,:,:,1:2),5,8,4,'exhaustive');
+toc;
