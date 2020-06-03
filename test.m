@@ -12,27 +12,29 @@ addpath(genpath('mmread'));
 % psnr(I_noisy,I)
 % psnr(filtI,I)
 s = pwd;
-V = mmread(strcat(s,'/bus.y4m'));
+V = mmread(strcat(s,'/bus_cif.y4m'));
 vidframes = cat(4,V.frames.cdata);
 [H,W,C,F] = size(vidframes);
 vidframes_impnoisy= zeros(H,W,C,F);
 vidframes_noisy=zeros(H,W,C,F);
 vidframes_filtered= zeros(H,W,C,F);
 doFrames=5;
-searchArea=10;
-Fsel=5;
+searchArea=7;
+Fsel=3;
 patchSize=8;
 refInt=4;
+neighbourhood=7;
+vidframes=vidframes(:,:,:,50:60);
 for i = 1:doFrames
     i
     for j= 1:C
         frame= vidframes(:,:,j,i);
         
-        gnoise= randn(H,W)*15;
-        pnoise= poissrnd(10, H,W);
+        gnoise= randn(H,W)*20;
+        pnoise= poissrnd(2, H,W);
         vidframes_noisy(:,:,j,i)= double(frame)+gnoise+pnoise;
         vidframes_noisy(:,:,j,i)=vidframes_noisy(:,:,j,i)/255;
-        vidframes_impnoisy(:,:,j,i)= imnoise(vidframes_noisy(:,:,j,i), 'salt & pepper', 0.2);
+        vidframes_impnoisy(:,:,j,i)= imnoise(vidframes_noisy(:,:,j,i), 'salt & pepper', 0.4);
         %vidframes_noisy(:,:,j,i)= imnoise(vidframes_impnoisy(:,:,j,i),'gaussian', 0);
         vidframes_filtered(:,:,j,i)= Med_Filter(vidframes_impnoisy(:,:,j,i), 11);
     end
@@ -46,7 +48,7 @@ vidframes_o= vidframes_o/255;
 vidframes_n= vidframes_impnoisy(:,:,:, 1:doFrames);
 vidframes_f= vidframes_filtered(:,:,:, 1: doFrames);
 tic;
-vidframes_a = PatchFinding(vidframes_f, Fsel, patchSize, refInt, searchArea, 'exhaustive');
+vidframes_a = PatchFinding(vidframes_f, Fsel, patchSize, refInt, searchArea, neighbourhood, 'exhaustive');
 toc;
 
 MSE_n= sum((vidframes_o-vidframes_n).*(vidframes_o-vidframes_n), 'all');

@@ -1,4 +1,4 @@
-function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, type)
+function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, neighbourhood, type)
     [H,W,C,K] = size(Images);
     Ans= zeros(H,W,C,K);
     Count= zeros(H,W,C,K);
@@ -12,9 +12,10 @@ function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, type)
                 xpos
                 RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, :, i);
                 RefPos= [i, ypos, xpos];
-                [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, type);
+                [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, neighbourhood, type);
                 Omega= selectReliable(Pjk);
                 Q= Denoise(Pjk, Omega);
+                
                 for k=1: size(Q, 2)
                     patch= reshape(Q(:,k), N,N, C);
                     Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))= Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))+ patch;
@@ -27,16 +28,19 @@ function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, type)
     Ans= Ans./Count;
 end
 
-function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, type)
-    [H,W,C,K] = size(Images);
-    N= size(RefP, 1);
-    Pjk= zeros(N*N*C, Fsel*K);    %Pjk is the matrix of matched patches in the chanel ch
-    Pos= zeros(Fsel*K, 3);      %Pos are the positions (Frame no, x, y) of those matched patches
+function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, neighbourhood, type)
+    [~,~,~,K] = size(Images);
+    %Pos are the positions (Frame no, x, y) of those matched patches
+    Ind=1;
     for i= 1:K
+        if abs(i-RefPos(1))> neighbourhood
+            continue;
+        end
         [P, Posf]= Select(Images(:,:, :, i), RefP, Fsel,RefPos, searchArea, type);
-        Pjk(:, (i-1)*Fsel+1: i*Fsel)= P;
-        Pos((i-1)*Fsel+1: i*Fsel, 2:3)= Posf;
-        Pos((i-1)*Fsel+1: i*Fsel, 1)= i;
+        Pjk(:, Ind: Ind+Fsel-1)= P;
+        Pos(Ind: Ind+Fsel-1, 2:3)= Posf;
+        Pos(Ind: Ind+Fsel-1, 1)= i;
+        Ind= Ind+ Fsel;
     end
 end
 
@@ -45,7 +49,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     N= size(RefP, 1);
     P= zeros(N*N*C, Fsel);
     Ar= inf(Fsel, 3);
-    Posf= zeros(Fsel, 2,'uint8');
+    Posf= zeros(Fsel, 2);
     if strcmp(type,'exhaustive')
         for i=1: H-N+1
             for j=1:W-N+1
