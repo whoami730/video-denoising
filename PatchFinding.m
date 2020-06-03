@@ -1,28 +1,25 @@
-function Ans = PatchFinding(Images,Fsel,patchSize,refInt,type)
+function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, type)
     [H,W,C,K] = size(Images);
     Ans= zeros(H,W,C,K);
-    Count= zeros(H,W,C,K,'uint8');
+    Count= zeros(H,W,C,K);
     N= patchSize;                %size of ref patch
     G= refInt;                %samlping interval
     for i=1:K
         for ypos=1:G:H-N+1
             for xpos=1:G:W-N+1
-                for ch=1:C
-                    i
-                    ypos
-                    xpos
-                    ch
-                    RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, ch, i);
-                    RefPos= [i, ypos, xpos];
-                    [Pjk, Pos]= Match(Images, RefP, ch, Fsel, RefPos,type);
-                    Omega= selectReliable(Pjk);
-                    Q= Denoise(Pjk, Omega);
-                    for k=1: size(Q, 2)
-                        patch= reshape(Q(:,k), N,N);
-                        Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))= Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))+ patch;
-                        Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))= Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, ch, Pos(k,1))+1;
-                    end
-                end
+                i
+                ypos
+                xpos
+                RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, :, i);
+                RefPos= [i, ypos, xpos];
+                [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, type);
+                Omega= selectReliable(Pjk);
+                Q= Denoise(Pjk, Omega);
+                for k=1: size(Q, 2)
+                    patch= reshape(Q(:,k), N,N, C);
+                    Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))= Ans(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))+ patch;
+                    Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))= Count(Pos(k,2):Pos(k,2)+N-1, Pos(k,3): Pos(k,3)+N-1, :, Pos(k,1))+1;
+                end                
             end
         end
     end
@@ -30,32 +27,32 @@ function Ans = PatchFinding(Images,Fsel,patchSize,refInt,type)
     Ans= Ans./Count;
 end
 
-function [Pjk, Pos] = Match(Images, RefP, ch, Fsel,RefPos,type)
-    [~,~,~,K] = size(Images);
+function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, type)
+    [H,W,C,K] = size(Images);
     N= size(RefP, 1);
-    Pjk= zeros(N*N, Fsel*K);    %Pjk is the matrix of matched patches in the chanel ch
-    Pos= zeros(Fsel*K, 3,'uint8');      %Pos are the positions (Frame no, x, y) of those matched patches
+    Pjk= zeros(N*N*C, Fsel*K);    %Pjk is the matrix of matched patches in the chanel ch
+    Pos= zeros(Fsel*K, 3);      %Pos are the positions (Frame no, x, y) of those matched patches
     for i= 1:K
-        [P, Posf]= Select(Images(:,:, ch, i), RefP, Fsel,RefPos,type);
+        [P, Posf]= Select(Images(:,:, :, i), RefP, Fsel,RefPos, searchArea, type);
         Pjk(:, (i-1)*Fsel+1: i*Fsel)= P;
         Pos((i-1)*Fsel+1: i*Fsel, 2:3)= Posf;
         Pos((i-1)*Fsel+1: i*Fsel, 1)= i;
     end
 end
 
-function [P, Posf] = Select(Image, RefP, Fsel,RefPos,type)
-    [H,W]=size(Image);
+function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
+    [H,W,C]=size(Image);
     N= size(RefP, 1);
-    P= zeros(N*N, Fsel);
+    P= zeros(N*N*C, Fsel);
     Ar= inf(Fsel, 3);
     Posf= zeros(Fsel, 2,'uint8');
     if strcmp(type,'exhaustive')
         for i=1: H-N+1
             for j=1:W-N+1
-                if abs(RefPos(2)-i)>10 || abs(RefPos(3)-j)>10
+                if abs(RefPos(2)-i)>searchArea || abs(RefPos(3)-j)>searchArea
                     continue;
                 end
-                currPatch= Image(i: i+N-1, j: j+N-1);
+                currPatch= Image(i: i+N-1, j: j+N-1, :);
                 MAD= abs(RefP-currPatch);
                 currVal= [sum(MAD, 'all') i j];
                 for k=1:Fsel
@@ -75,10 +72,10 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos,type)
         Ar_temp = inf(Fsel*4,3);
         for i = 1:H-N+1
             for j = 1:W-N+1
-                if abs(RefPos(2)-i)>10 || abs(RefPos(3)-j)>10
+                if abs(RefPos(2)-i)>searchArea || abs(RefPos(3)-j)>searchArea
                     continue;
                 end
-                currPatch= Image(i: i+N-1, j: j+N-1);
+                currPatch= Image(i: i+N-1, j: j+N-1, :);
                 Patch_label = Image_labels(i,j);
                 Pattern = (RefP_labels == Patch_label);
                 MAD = abs(RefP(Pattern)-currPatch(Pattern));
@@ -109,8 +106,8 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos,type)
     end
     for i=1: Fsel
         Posf(i,:) = Ar(i,2:3);
-        currPatch= Image(Ar(i,2): Ar(i,2)+N-1, Ar(i,3): Ar(i,3)+N-1);
-        P(:,i) = reshape(currPatch, N*N, 1);
+        currPatch= Image(Ar(i,2): Ar(i,2)+N-1, Ar(i,3): Ar(i,3)+N-1, :);
+        P(:,i) = reshape(currPatch, N*N*C, 1);
     end
     assert(~any(isnan(P),'all'),"Output array contains inf values, please use bigger frames");
 end
@@ -123,12 +120,6 @@ function Omega= selectReliable(Pjk)
     D= D.*D;
     Ds=sum(D,2)/(M-1);
     sigma= 2*sqrt(sum(Ds, 'all'));
-    Omega= zeros(N,M);
-    for i=1: N
-        for j=1: M
-            if (abs(Pjk(i,j)-S(i))<= sigma)
-                Omega(i,j)=1;
-            end
-        end
-    end
+    Omega= abs(Pjk-S)<= sigma;
+    
 end

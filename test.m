@@ -18,7 +18,12 @@ vidframes = cat(4,V.frames.cdata);
 vidframes_impnoisy= zeros(H,W,C,F);
 vidframes_noisy=zeros(H,W,C,F);
 vidframes_filtered= zeros(H,W,C,F);
-for i = 1:10
+doFrames=4;
+searchArea=10;
+Fsel=5;
+patchSize=8;
+refInt=4;
+for i = 1:doFrames
     i
     for j= 1:C
         frame= vidframes(:,:,j,i);
@@ -32,10 +37,17 @@ for i = 1:10
     end
 end
 
+%tic;
+%Ansf = PatchFinding(vidframes_filtered(:,:,:,1:2),5,8,4,'fast');
+%toc;
+vidframes_o= double(vidframes(:,:,:, 1:doFrames));
+vidframes_o= vidframes_o/255;
+vidframes_n= vidframes_impnoisy(:,:,:, 1:doFrames);
+vidframes_f= vidframes_filtered(:,:,:, 1: doFrames);
 tic;
-Ansf = PatchFinding(vidframes_filtered(:,:,:,1:2),5,8,4,'fast');
+vidframes_a = PatchFinding(vidframes_f, Fsel, patchSize, refInt, searchArea, 'exhaustive');
 toc;
 
-tic;
-AnsE = PatchFinding(vidframes_filtered(:,:,:,1:2),5,8,4,'exhaustive');
-toc;
+MSE_n= sum((vidframes_o-vidframes_n).*(vidframes_o-vidframes_n), 'all');
+MSE_f= sum((vidframes_o-vidframes_f).*(vidframes_o-vidframes_f), 'all');
+MSE_a= sum((vidframes_o-vidframes_a).*(vidframes_o-vidframes_a), 'all');
