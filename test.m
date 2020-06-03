@@ -12,13 +12,13 @@ addpath(genpath('mmread'));
 % psnr(I_noisy,I)
 % psnr(filtI,I)
 s = pwd;
-V = mmread(strcat(s,'/test.mp4'));
+V = mmread(strcat(s,'/bus.y4m'));
 vidframes = cat(4,V.frames.cdata);
 [H,W,C,F] = size(vidframes);
 vidframes_impnoisy= zeros(H,W,C,F);
 vidframes_noisy=zeros(H,W,C,F);
 vidframes_filtered= zeros(H,W,C,F);
-doFrames=4;
+doFrames=5;
 searchArea=10;
 Fsel=5;
 patchSize=8;
@@ -29,7 +29,8 @@ for i = 1:doFrames
         frame= vidframes(:,:,j,i);
         
         gnoise= randn(H,W)*15;
-        vidframes_noisy(:,:,j,i)= double(frame)+gnoise;
+        pnoise= poissrnd(10, H,W);
+        vidframes_noisy(:,:,j,i)= double(frame)+gnoise+pnoise;
         vidframes_noisy(:,:,j,i)=vidframes_noisy(:,:,j,i)/255;
         vidframes_impnoisy(:,:,j,i)= imnoise(vidframes_noisy(:,:,j,i), 'salt & pepper', 0.2);
         %vidframes_noisy(:,:,j,i)= imnoise(vidframes_impnoisy(:,:,j,i),'gaussian', 0);
