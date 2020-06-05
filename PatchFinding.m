@@ -1,4 +1,4 @@
-function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, neighbourhood, type)
+function Ans = PatchFinding(Images, indices, Fsel,patchSize,refInt, searchArea, neighbourhood, type)
     [H,W,C,K] = size(Images);
     Ans= zeros(H,W,C,K);
     Count= zeros(H,W,C,K);
@@ -13,7 +13,8 @@ function Ans = PatchFinding(Images,Fsel,patchSize,refInt, searchArea, neighbourh
                 RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, :, i);
                 RefPos= [i, ypos, xpos];
                 [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, neighbourhood, type);
-                Omega= selectReliable(Pjk);
+                
+                Omega= selectReliable(Pjk, indices, Pos, patchSize);
                 Q= Denoise(Pjk, Omega);
                 
                 for k=1: size(Q, 2)
@@ -116,7 +117,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     assert(~any(isnan(P),'all'),"Output array contains inf values, please use bigger frames");
 end
 
-function Omega= selectReliable(Pjk)
+function Omega= selectReliable(Pjk, indices, Pos, patchSize)
     [N,M] = size(Pjk);
     Pjk= double(Pjk);
     S= sum(Pjk, 2)/M;
@@ -125,5 +126,14 @@ function Omega= selectReliable(Pjk)
     Ds=sum(D,2)/(M-1);
     sigma= 2*sqrt(sum(Ds, 'all'));
     Omega= abs(Pjk-S)<= sigma;
+    Omega2= zeros(N,M);
+    for k=1: size(Pjk, 2)
+        patch=indices(Pos(k,2):Pos(k,2)+patchSize-1, Pos(k,3): Pos(k,3)+patchSize-1, :, Pos(k,1));
+        patch2= reshape(patch, N,1);
+        Omega2(:,k)= patch2(:);
+        
+    end
+    
+    Omega= Omega2 & Omega;
     
 end
