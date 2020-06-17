@@ -72,8 +72,8 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     elseif strcmp(type,'fast')
         assert(mod(N,2) == 0,'Ref Patch is odd');
         assert(mod(H,2) == 0 && mod(W,2) == 0,'Frame size is odd');
-        RefP_labels = repmat(cast([1 2; 3 4],'uint8'),N/2);
-        Image_labels = repmat(cast([1 4; 2 3],'uint8'),H/2,W/2);
+        RefP_labels = repmat(cast([1 2; 3 4],'uint8'),N/2,N/2,C);
+        Image_labels = repmat(cast([1 4; 2 3],'uint8'),H/2,W/2,C);
         Ar_temp = inf(Fsel*4,3);
         for i = 1:H-N+1
             for j = 1:W-N+1
@@ -81,7 +81,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
                     continue;
                 end
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
-                Patch_label = Image_labels(i,j);
+                Patch_label = Image_labels(i,j,:);
                 Pattern = (RefP_labels == Patch_label);
                 MAD = abs(RefP(Pattern)-currPatch(Pattern));
                 currVal= [sum(MAD, 'all') i j];
@@ -97,7 +97,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
         for i = 1:Fsel*4
             currVal = Ar_temp(i,:);
             a = currVal(2); b = currVal(3);
-            currVal(1) = sum(abs(Image(a:a+N-1,b:b+N-1) - RefP),'all');
+            currVal(1) = sum(abs(Image(a:a+N-1,b:b+N-1,:) - RefP),'all');
             for j = 1:Fsel
                 if Ar(j,1) > currVal(1)
                     temp = Ar(j,:);
