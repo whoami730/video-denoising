@@ -130,8 +130,5 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
         Omega2(:,k)= patch2(:);
         
     end
-    %for i=1:
-    Omega= Omega2 & Omega;
-    %s= sum(Omega, 'all')
-    
+    Omega= Omega2 & Omega;    
 end
