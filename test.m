@@ -35,7 +35,7 @@ vidframes_o= vidframes_o/255;
 vidframes_n= vidframes_impnoisy(:,:,:, 1:doFrames);
 vidframes_f= vidframes_filtered(:,:,:, 1: doFrames);
 tic;
-vidframes_a = PatchFinding(vidframes_f, indices, Fsel, patchSize, refInt, searchArea, neighbourhood, 'fast');
+vidframes_a = PatchFinding(vidframes_f, indices, Fsel, patchSize, refInt, searchArea, neighbourhood, 'exhaustive');
 toc;
 
 MSE_n= sum((vidframes_o-vidframes_n).*(vidframes_o-vidframes_n), 'all');

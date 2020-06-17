@@ -49,8 +49,9 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     [H,W,C]=size(Image);
     N= size(RefP, 1);
     P= zeros(N*N*C, Fsel);
-    Ar= inf(Fsel, 3);
     Posf= zeros(Fsel, 2);
+    Allmads= zeros(0);
+    Allpos= zeros(0);
     if strcmp(type,'exhaustive')
         for i=1: H-N+1
             for j=1:W-N+1
@@ -59,14 +60,8 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
                 end
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
                 MAD= abs(RefP-currPatch);
-                currVal= [sum(MAD, 'all') i j];
-                for k=1:Fsel
-                    if Ar(k,1) > currVal(1)
-                        temp= Ar(k,:);
-                        Ar(k,:)= currVal;
-                        currVal= temp;
-                    end
-                end
+                Allmads(end+1)= sum(MAD,'all');
+                Allpos(end+1, :)= [i j];
             end
         end
     elseif strcmp(type,'fast')
@@ -109,9 +104,11 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     else
         throw('Patch Finding type not found')
     end
+    [~, Inds]= mink(Allmads, Fsel);
+    PosT= Allpos(Inds, :);
+    Posf= PosT;
     for i=1: Fsel
-        Posf(i,:) = Ar(i,2:3);
-        currPatch= Image(Ar(i,2): Ar(i,2)+N-1, Ar(i,3): Ar(i,3)+N-1, :);
+        currPatch= Image(Posf(i,1): Posf(i,1)+N-1, Posf(i,2): Posf(i,2)+N-1, :);
         P(:,i) = reshape(currPatch, N*N*C, 1);
     end
     assert(~any(isnan(P),'all'),"Output array contains inf values, please use bigger frames");
@@ -135,6 +132,6 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
     end
     %for i=1:
     Omega= Omega2 & Omega;
-    s= sum(Omega, 'all')
+    %s= sum(Omega, 'all')
     
 end
