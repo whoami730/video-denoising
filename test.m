@@ -1,16 +1,5 @@
 clear; clc;
 addpath(genpath('mmread'));
-% I = imread('lena512.bmp');
-% 
-% I_noisy = imnoise(I,'salt & pepper',0.7);
-% 
-% [filtI,indices] = Med_Filter(I_noisy,11);
-% imshow(filtI);
-% figure;
-% imshow(I_noisy);
-% 
-% psnr(I_noisy,I)
-% psnr(filtI,I)
 s = pwd;
 V = mmread(strcat(s,'/bus.y4m'));
 vidframes = double(cat(4,V.frames.cdata));
