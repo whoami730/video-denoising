@@ -12,14 +12,14 @@ addpath(genpath('mmread'));
 % psnr(I_noisy,I)
 % psnr(filtI,I)
 s = pwd;
-V = mmread(strcat(s,'/bus_cif.y4m'));
+V = mmread(strcat(s,'/bus.y4m'));
 vidframes = cat(4,V.frames.cdata);
 [H,W,C,F] = size(vidframes);
 vidframes_impnoisy= zeros(H,W,C,F);
 vidframes_noisy=zeros(H,W,C,F);
 vidframes_filtered= zeros(H,W,C,F);
 indices=  zeros(H,W,C,F);
-doFrames=2;
+doFrames=3;
 searchArea=7;
 Fsel=3;
 patchSize=8;

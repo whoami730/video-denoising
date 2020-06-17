@@ -121,10 +121,10 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
     [N,M] = size(Pjk);
     Pjk= double(Pjk);
     S= sum(Pjk, 2)/M;
-    D= Pjk-S;
-    D= D.*D;
-    Ds=sum(D,2)/(M-1);
-    sigma= 2*sqrt(sum(Ds, 'all'));
+    temp = std(Pjk,0,2);
+    temp= temp .* temp;
+    sigma = sum(temp, 'all')/N;
+    sigma = 2* sqrt(sigma);
     Omega= abs(Pjk-S)<= sigma;
     Omega2= zeros(N,M);
     for k=1: size(Pjk, 2)
@@ -133,7 +133,8 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
         Omega2(:,k)= patch2(:);
         
     end
-    
+    %for i=1:
     Omega= Omega2 & Omega;
+    s= sum(Omega, 'all')
     
 end
