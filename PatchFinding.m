@@ -6,10 +6,11 @@ function Ans = PatchFinding(Images, indices, Fsel,patchSize,refInt, searchArea, 
     G= refInt;                %samlping interval
     for i=1:K
         for ypos=1:G:H-N+1
+            i
+            ypos
             for xpos=1:G:W-N+1
-                i
-                ypos
-                xpos
+                
+                
                 RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, :, i);
                 RefPos= [i, ypos, xpos];
                 [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, neighbourhood, type);
