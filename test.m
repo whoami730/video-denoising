@@ -1,38 +1,28 @@
 clear; clc;
 addpath(genpath('mmread'));
-% I = imread('lena512.bmp');
-% 
-% I_noisy = imnoise(I,'salt & pepper',0.7);
-% 
-% [filtI,indices] = Med_Filter(I_noisy,11);
-% imshow(filtI);
-% figure;
-% imshow(I_noisy);
-% 
-% psnr(I_noisy,I)
-% psnr(filtI,I)
 s = pwd;
 V = mmread(strcat(s,'/bus.y4m'));
-vidframes = cat(4,V.frames.cdata);
+vidframes = double(cat(4,V.frames.cdata));
 [H,W,C,F] = size(vidframes);
 vidframes_filtered= zeros(H,W,C,F);
 indices=  zeros(H,W,C,F);
-doFrames=50;
-searchArea=10;
-Fsel=5;
+doFrames=10;
+searchArea=7;
+Fsel=3;
 patchSize=8;
 refInt=4;
-neighbourhood=6;
-gnoise = randn(H,W,C,F)*20;
-vidframes_noisy = (double(vidframes)+gnoise)/255;
-vidframes_impnoisy = imnoise(vidframes_noisy,'salt & pepper',0.4);
+neighbourhood=7;
+noise_key = {'gaussian','impulsive','poisson'};
+noise_value = {10,0.3,0.05};
+M = containers.Map(noise_key,noise_value);
+vidframes_noisy = (vidframes+poissrnd(M('poisson').*vidframes) +randn(size(vidframes)).*M('gaussian'))/255;
+vidframes_noisy = imnoise(vidframes_noisy,'salt & pepper',M('impulsive'));
 for i = 1:doFrames
 i
-    [vidframes_filtered(:,:,:,i), indices(:,:,:,i)]= Med_Filter(vidframes_impnoisy(:,:,:,i), 11);
+    [vidframes_filtered(:,:,:,i), indices(:,:,:,i)]= Med_Filter(vidframes_noisy(:,:,:,i), 5);
 end
-vidframes_o= double(vidframes(:,:,:, 1:doFrames));
-vidframes_o= vidframes_o/255;
-vidframes_n= vidframes_impnoisy(:,:,:, 1:doFrames);
+vidframes_o= vidframes(:,:,:, 1:doFrames)/255;
+vidframes_n= vidframes_noisy(:,:,:, 1:doFrames);
 vidframes_f= vidframes_filtered(:,:,:, 1: doFrames);
 tic;
 vidframes_a = PatchFinding(vidframes_f, indices, Fsel, patchSize, refInt, searchArea, neighbourhood, 'exhaustive');

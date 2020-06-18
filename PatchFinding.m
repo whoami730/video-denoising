@@ -34,10 +34,7 @@ function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, neighbourhood
     [~,~,~,K] = size(Images);
     %Pos are the positions (Frame no, x, y) of those matched patches
     Ind=1;
-    for i= 1:K
-        if abs(i-RefPos(1))> neighbourhood
-            continue;
-        end
+    for i= max([1,RefPos(1)-neighbourhood]):min([K,RefPos(1)+neighbourhood])
         [P, Posf]= Select(Images(:,:, :, i), RefP, Fsel,RefPos, searchArea, type);
         Pjk(:, Ind: Ind+Fsel-1)= P;
         Pos(Ind: Ind+Fsel-1, 2:3)= Posf;
@@ -50,15 +47,11 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
     [H,W,C]=size(Image);
     N= size(RefP, 1);
     P= zeros(N*N*C, Fsel);
-    Posf= zeros(Fsel, 2);
     Allmads= zeros(0);
     Allpos= zeros(0);
     if strcmp(type,'exhaustive')
-        for i=1: H-N+1
-            for j=1:W-N+1
-                if abs(RefPos(2)-i)>searchArea || abs(RefPos(3)-j)>searchArea
-                    continue;
-                end
+        for i=max([1,RefPos(2)-searchArea]): min([H-N+1,RefPos(2)+searchArea])
+            for j=max([1,RefPos(3)-searchArea]): min([W-N+1,RefPos(3)+searchArea])
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
                 MAD= abs(RefP-currPatch);
                 Allmads(end+1)= sum(MAD,'all');
@@ -70,36 +63,28 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
         assert(mod(H,2) == 0 && mod(W,2) == 0,'Frame size is odd');
         RefP_labels = repmat(cast([1 2; 3 4],'uint8'),N/2,N/2,C);
         Image_labels = repmat(cast([1 4; 2 3],'uint8'),H/2,W/2,C);
-        Ar_temp = inf(Fsel*4,3);
-        for i = 1:H-N+1
-            for j = 1:W-N+1
-                if abs(RefPos(2)-i)>searchArea || abs(RefPos(3)-j)>searchArea
-                    continue;
-                end
+        Allmads_temp = [];
+        Allpos_temp = [];
+        for i=max([1,RefPos(2)-searchArea]): min([H-N+1,RefPos(2)+searchArea])
+            for j=max([1,RefPos(3)-searchArea]): min([W-N+1,RefPos(3)+searchArea])
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
                 Patch_label = Image_labels(i,j,:);
                 Pattern = (RefP_labels == Patch_label);
                 MAD = abs(RefP(Pattern)-currPatch(Pattern));
-                currVal= [sum(MAD, 'all') i j];
-                for k=1:Fsel*4
-                    if Ar_temp(k,1) > currVal(1)
-                        temp= Ar_temp(k,:);
-                        Ar_temp(k,:)= currVal;
-                        currVal= temp;
-                    end
-                end
+                X = inf(1,4);
+                X(Patch_label) = sum(MAD,'all');
+                Allmads_temp = [Allmads_temp; X];
+                Allpos_temp = [Allpos_temp; [i j]];
             end
         end
-        for i = 1:Fsel*4
-            currVal = Ar_temp(i,:);
-            a = currVal(2); b = currVal(3);
-            currVal(1) = sum(abs(Image(a:a+N-1,b:b+N-1,:) - RefP),'all');
+        [~,Inds_temp] = mink(Allmads_temp,Fsel);
+        for i = 1:4
+            Pos_t = Allpos_temp(Inds_temp(:,i),:);
             for j = 1:Fsel
-                if Ar(j,1) > currVal(1)
-                    temp = Ar(j,:);
-                    Ar(j,:) = currVal;
-                    currVal = temp;
-                end
+                currPatch = Image(Pos_t(j,1):Pos_t(j,1)+N-1,Pos_t(j,2):Pos_t(j,2)+N-1);
+                MAD = sum(abs(currPatch-RefP),'all');
+                Allmads(end+1) = MAD;
+                Allpos(end+1,:) = Pos_t(j,:);
             end
         end
     else
@@ -131,8 +116,5 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
         Omega2(:,k)= patch2(:);
         
     end
-    %for i=1:
-    Omega= Omega2 & Omega;
-    %s= sum(Omega, 'all')
-    
+    Omega= Omega2 & Omega;    
 end
