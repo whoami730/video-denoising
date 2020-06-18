@@ -3,7 +3,7 @@ function Ans = PatchFinding(Images, indices, Fsel,patchSize,refInt, searchArea, 
     Ans= zeros(H,W,C,K);
     Count= zeros(H,W,C,K);
     N= patchSize;                %size of ref patch
-    G= refInt;                %samlping interval
+    G= refInt;                %sampling interval
     for i=1:K
         for ypos=1:G:H-N+1
             i
@@ -13,7 +13,7 @@ function Ans = PatchFinding(Images, indices, Fsel,patchSize,refInt, searchArea, 
                 
                 RefP= Images(ypos: ypos+N-1, xpos: xpos+N-1, :, i);
                 RefPos= [i, ypos, xpos];
-                [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, neighbourhood, type);
+                [Pjk, Pos]= Match(Images, RefP , Fsel, RefPos, searchArea, neighbourhood, type, indices);
                 
                 Omega= selectReliable(Pjk, indices, Pos, patchSize);
                 Q= Denoise(Pjk, Omega);
@@ -30,12 +30,12 @@ function Ans = PatchFinding(Images, indices, Fsel,patchSize,refInt, searchArea, 
     Ans= Ans./Count;
 end
 
-function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, neighbourhood, type)
+function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, neighbourhood, type, indices)
     [~,~,~,K] = size(Images);
     %Pos are the positions (Frame no, x, y) of those matched patches
     Ind=1;
     for i= max([1,RefPos(1)-neighbourhood]):min([K,RefPos(1)+neighbourhood])
-        [P, Posf]= Select(Images(:,:, :, i), RefP, Fsel,RefPos, searchArea, type);
+        [P, Posf]= Select(Images(:,:, :, i), RefP, Fsel,RefPos, searchArea, type, indices);
         Pjk(:, Ind: Ind+Fsel-1)= P;
         Pos(Ind: Ind+Fsel-1, 2:3)= Posf;
         Pos(Ind: Ind+Fsel-1, 1)= i;
@@ -43,18 +43,20 @@ function [Pjk, Pos] = Match(Images, RefP, Fsel,RefPos, searchArea, neighbourhood
     end
 end
 
-function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
+function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type, indices)
     [H,W,C]=size(Image);
     N= size(RefP, 1);
     P= zeros(N*N*C, Fsel);
     Allmads= zeros(0);
     Allpos= zeros(0);
+    RefInds= indices(RefPos(2):RefPos(2)+N-1,RefPos(3):RefPos(3)+N-1,:, RefPos(1));
     if strcmp(type,'exhaustive')
         for i=max([1,RefPos(2)-searchArea]): min([H-N+1,RefPos(2)+searchArea])
             for j=max([1,RefPos(3)-searchArea]): min([W-N+1,RefPos(3)+searchArea])
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
-                MAD= abs(RefP-currPatch);
+                MAD= abs(RefP-currPatch).* RefInds;
                 Allmads(end+1)= sum(MAD,'all');
+                
                 Allpos(end+1, :)= [i j];
             end
         end
@@ -116,5 +118,5 @@ function Omega= selectReliable(Pjk, indices, Pos, patchSize)
         Omega2(:,k)= patch2(:);
         
     end
-    Omega= Omega2 & Omega;    
+    Omega= Omega2& Omega;    
 end

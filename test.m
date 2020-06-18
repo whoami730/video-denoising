@@ -1,25 +1,26 @@
-clear; clc;
+    clear; clc;
 addpath(genpath('mmread'));
 s = pwd;
-V = mmread(strcat(s,'/bus.y4m'));
+V = mmread(strcat(s,'/test.mp4'));
 vidframes = double(cat(4,V.frames.cdata));
 [H,W,C,F] = size(vidframes);
 vidframes_filtered= zeros(H,W,C,F);
 indices=  zeros(H,W,C,F);
-doFrames=10;
-searchArea=7;
-Fsel=3;
+doFrames=5;
+searchArea=10;
+Fsel=5;
+%Make sure the frame dimensions are multiples of patchSize and refInt 
 patchSize=8;
 refInt=4;
 neighbourhood=7;
 noise_key = {'gaussian','impulsive','poisson'};
-noise_value = {10,0.3,0.05};
+noise_value = {20,0.3,0.5};
 M = containers.Map(noise_key,noise_value);
-vidframes_noisy = (vidframes+poissrnd(M('poisson').*vidframes) +randn(size(vidframes)).*M('gaussian'))/255;
+vidframes_noisy = ((1-M('poisson'))*vidframes+poissrnd(M('poisson').*vidframes) +randn(size(vidframes)).*M('gaussian'))/255;
 vidframes_noisy = imnoise(vidframes_noisy,'salt & pepper',M('impulsive'));
 for i = 1:doFrames
-i
-    [vidframes_filtered(:,:,:,i), indices(:,:,:,i)]= Med_Filter(vidframes_noisy(:,:,:,i), 5);
+    i
+    [vidframes_filtered(:,:,:,i), indices(:,:,:,i)]= Med_Filter(vidframes_noisy(:,:,:,i), 10);
 end
 vidframes_o= vidframes(:,:,:, 1:doFrames)/255;
 vidframes_n= vidframes_noisy(:,:,:, 1:doFrames);
