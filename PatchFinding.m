@@ -90,8 +90,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type)
         throw('Patch Finding type not found')
     end
     [~, Inds]= mink(Allmads, Fsel);
-    PosT= Allpos(Inds, :);
-    Posf= PosT;
+    Posf= Allpos(Inds, :);
     for i=1: Fsel
         currPatch= Image(Posf(i,1): Posf(i,1)+N-1, Posf(i,2): Posf(i,2)+N-1, :);
         P(:,i) = reshape(currPatch, N*N*C, 1);
@@ -101,19 +100,16 @@ end
 
 function Omega= selectReliable(Pjk, indices, Pos, patchSize)
     [N,M] = size(Pjk);
-    Pjk= double(Pjk);
-    S= sum(Pjk, 2)/M;
+    S= mean(Pjk, 2);
     temp = std(Pjk,0,2);
-    temp= temp .* temp;
+    temp= temp .^ 2;
     sigma = sum(temp, 'all')/N;
     sigma = 2* sqrt(sigma);
     Omega= abs(Pjk-S)<= sigma;
     Omega2= zeros(N,M);
     for k=1: size(Pjk, 2)
         patch=indices(Pos(k,2):Pos(k,2)+patchSize-1, Pos(k,3): Pos(k,3)+patchSize-1, :, Pos(k,1));
-        patch2= reshape(patch, N,1);
-        Omega2(:,k)= patch2(:);
-        
+        Omega2(:,k)= patch(:);
     end
     Omega= Omega2 & Omega;    
 end
