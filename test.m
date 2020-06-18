@@ -2,7 +2,8 @@
 addpath(genpath('mmread'));
 s = pwd;
 V = mmread(strcat(s,'/test.mp4'));
-vidframes = double(cat(4,V.frames.cdata));
+all_frames = V.frames;
+vidframes = double(cat(4,all_frames.cdata));
 [H,W,C,F] = size(vidframes);
 vidframes_filtered= zeros(H,W,C,F);
 indices=  zeros(H,W,C,F);
@@ -14,7 +15,7 @@ patchSize=8;
 refInt=4;
 neighbourhood=7;
 noise_key = {'gaussian','impulsive','poisson'};
-noise_value = {20,0.3,0.5};
+noise_value = {10,0.3,0.3};
 M = containers.Map(noise_key,noise_value);
 vidframes_noisy = ((1-M('poisson'))*vidframes+poissrnd(M('poisson').*vidframes) +randn(size(vidframes)).*M('gaussian'))/255;
 vidframes_noisy = imnoise(vidframes_noisy,'salt & pepper',M('impulsive'));

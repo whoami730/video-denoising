@@ -6,13 +6,19 @@ SumVec= sum(Pomega, 2);
 CountMat= Omega;
 CountVec= sum(CountMat, 2);
 AvVec= SumVec./CountVec;
-Pomega= Pomega-AvVec;
-Pomega= Pomega.*Omega;
-Pomega= Pomega.*Pomega;
+Pomega= Pomega-(AvVec.*Omega);
+Pomega= Pomega.^2;
 SumVec= sum(Pomega, 2);
 AvVec= SumVec./CountVec;
 sigma= mean(AvVec, 'all','omitnan');
-sigma= sqrt(sigma);
+rgl = 1e-6;
+if isnan(sigma)
+    warning("sigma is NaN, not a good thing");
+    sigma = rgl;
+else
+    sigma = sigma+rgl;
+end
+sigma = sqrt(sigma);
 p= sum(Omega, 'all')/ (M*N);
 u= (sqrt(M)+ sqrt(N))*sqrt(p)*sigma;
 t=2;
@@ -42,5 +48,3 @@ function Q1= iterate(Q0, Omega, P, t, u)
 R= Q0- t*(Q0-P).*Omega;
 Q1= softShrink(R, t*u);
 end
-
-
