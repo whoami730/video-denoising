@@ -72,7 +72,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type, indices)
                 currPatch= Image(i: i+N-1, j: j+N-1, :);
                 Patch_label = Image_labels(i,j,:);
                 Pattern = (RefP_labels == Patch_label);
-                MAD = abs(RefP(Pattern)-currPatch(Pattern));
+                MAD = abs(RefP(Pattern)-currPatch(Pattern)).*RefInds;
                 X = inf(1,4);
                 X(Patch_label) = sum(MAD,'all');
                 Allmads_temp = [Allmads_temp; X];
@@ -84,7 +84,7 @@ function [P, Posf] = Select(Image, RefP, Fsel,RefPos, searchArea, type, indices)
             Pos_t = Allpos_temp(Inds_temp(:,i),:);
             for j = 1:Fsel
                 currPatch = Image(Pos_t(j,1):Pos_t(j,1)+N-1,Pos_t(j,2):Pos_t(j,2)+N-1);
-                MAD = sum(abs(currPatch-RefP),'all');
+                MAD = sum(abs(currPatch-RefP).*RefInds,'all');
                 Allmads(end+1) = MAD;
                 Allpos(end+1,:) = Pos_t(j,:);
             end
