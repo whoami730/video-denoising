@@ -26,18 +26,16 @@ t= (sqrt(M)+ sqrt(N))*sqrt(p)*sigma;
 
 
 Y0= zeros(N,M);
-del= 1.2*N*M/sum(Omega,'all')/2;
+del= min(1.2*N*M/sum(Omega,'all'),2);
 ep = 10^-5;
 it=1;
-
-X= softShrink(Y0, t);
-while it~=100 && norm(P-X, 'fro')> ep
-    Y1= Y0 + del*Omega.*(P-X);
-    %Y1= iterate(Y1, Omega, P, t, del);
-    X= softShrink(Y1, t);
+Y1 = iterate(Y0,Omega,P,t,del);
+while it~=100 && norm(Y0-Y1, 'fro')> ep
+    Y0 = Y1;
+    Y1= iterate(Y0, Omega, P, t, del);
     it= it+1;
 end
-%X= softShrink(Y1,t);    
+X= softShrink(Y1,t);    
 end
 
 function D= softShrink(R, t)
